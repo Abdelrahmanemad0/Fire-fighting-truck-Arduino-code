@@ -1,0 +1,172 @@
+// Pins for Motor A
+const int motorAIn1 = 6;
+const int motorAIn2 = 7;
+const int motorAEnable = 2; // PWM pin for Motor A
+
+// Pins for Motor B
+const int motorBIn3 = 8;
+const int motorBIn4 = 3;
+const int motorBEnable = 10; // PWM pin for Motor B
+
+// Pins for Ultrasonic Sensor
+const int trigPin = 9;
+const int echoPin = 11;
+const int ledPin = 12; // LED to indicate obstacle proximity
+
+// Pins for Input and Indicators (LEDs, Buzzer)
+int Input = A0;
+int Buzzer = A1;
+int GreenLED = A2;
+int RedLED = A3;
+
+// Threshold values
+const int thresholdDistance = 5;  // Adjust this value for testing
+const int MAX = 600; // Max threshold for smoke sensor
+
+// Variable to track the current state of the LED
+bool ledState = false; // Start with LED off
+
+void setup() {
+  // Initialize serial communication for debugging
+  Serial.begin(9600);
+
+  // Pin setup for Ultrasonic Sensor, LEDs, Buzzer, Motors
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+
+  pinMode(Input, INPUT);
+  pinMode(RedLED, OUTPUT);
+  pinMode(GreenLED, OUTPUT);
+  pinMode(Buzzer, OUTPUT);
+
+  pinMode(motorAIn1, OUTPUT);
+  pinMode(motorAIn2, OUTPUT);
+  pinMode(motorAEnable, OUTPUT);
+  pinMode(motorBIn3, OUTPUT);
+  pinMode(motorBIn4, OUTPUT);
+  pinMode(motorBEnable, OUTPUT);
+
+  // Initially stop the motors
+  stopMotors();
+}
+
+void loop() {
+  // Get the distance from the ultrasonic sensor
+  long distance = getDistance();
+
+  // Print the distance to the serial monitor for debugging
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // If the distance is valid
+  if (distance > 0) {
+    // If the distance is less than the threshold, stop the motors and turn on the LED
+    if (distance < thresholdDistance) {
+      digitalWrite(ledPin, HIGH);  // Turn on the LED (Obstacle detected)
+      stopMotors();  // Stop the motors
+    } else {
+      digitalWrite(ledPin, LOW);   // Turn off the LED (No obstacle)
+      moveForward(100); // Move forward at reduced PWM speed (100)
+    }
+  } else {
+    // If distance is not valid (error state), turn off the LED and stop the motors
+    digitalWrite(ledPin, LOW);
+    stopMotors();
+  }
+
+  // Read analog input from smoke sensor
+  int value = analogRead(A0);
+
+  // If the input value exceeds the maximum threshold, activate warning signals
+  if (value >= MAX) {
+    digitalWrite(GreenLED, LOW);
+    digitalWrite(RedLED, HIGH);
+    digitalWrite(Buzzer, HIGH);
+    delay(5000); // Keep the buzzer on for 5 seconds
+    digitalWrite(Buzzer, LOW);
+    delay(6000); // Wait for 6 seconds before checking again
+  } else {
+    digitalWrite(RedLED, LOW);
+    digitalWrite(Buzzer, LOW);
+    digitalWrite(GreenLED, HIGH); // Green LED indicates normal conditions
+  }
+
+  delay(100);  // Short delay for stability
+}
+
+// Function to get the distance from the ultrasonic sensor
+long getDistance() {
+  // Send a pulse to trigger the sensor
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure the pulse duration
+  long duration = pulseIn(echoPin, HIGH);
+
+  // Calculate the distance in cm (speed of sound is 0.0344 cm/us)
+  long distance = (duration * 0.0344) / 2;
+
+  // Check if the distance is within a valid range (not too close or too far)
+  if (distance > 0 && distance < 400) {  // Sensor max range is usually around 400 cm
+    return distance;
+  } else {
+    return -1;  // Return -1 if invalid reading
+  }
+}
+
+// Motor control functions
+void moveForward(int speed) {
+  digitalWrite(motorAIn1, HIGH);
+  digitalWrite(motorAIn2, LOW);
+  analogWrite(motorAEnable, speed);
+
+  digitalWrite(motorBIn3, HIGH);
+  digitalWrite(motorBIn4, LOW);
+  analogWrite(motorBEnable, speed);
+}
+
+void stopMotors() {
+  digitalWrite(motorAIn1, LOW);
+  digitalWrite(motorAIn2, LOW);
+  analogWrite(motorAEnable, 0);
+
+  digitalWrite(motorBIn3, LOW);
+  digitalWrite(motorBIn4, LOW);
+  analogWrite(motorBEnable, 0);
+}
+
+void moveBackward(int speed) {
+  digitalWrite(motorAIn1, LOW);
+  digitalWrite(motorAIn2, HIGH);
+  analogWrite(motorAEnable, speed);
+
+  digitalWrite(motorBIn3, LOW);
+  digitalWrite(motorBIn4, HIGH);
+  analogWrite(motorBEnable, speed);
+}
+
+void turnLeft(int speed) {
+  digitalWrite(motorAIn1, LOW);
+  digitalWrite(motorAIn2, HIGH);
+  analogWrite(motorAEnable, speed);
+
+  digitalWrite(motorBIn3, HIGH);
+  digitalWrite(motorBIn4, LOW);
+  analogWrite(motorBEnable, speed);
+}
+
+void turnRight(int speed) {
+  digitalWrite(motorAIn1, HIGH);
+  digitalWrite(motorAIn2, LOW);
+  analogWrite(motorAEnable, speed);
+
+  digitalWrite(motorBIn3, LOW);
+  digitalWrite(motorBIn4, HIGH);
+  analogWrite(motorBEnable, speed);
+}
+
