@@ -1,7 +1,18 @@
+// Fire-fighting truck — Arduino sketch
+//
+// Two-motor rover that:
+//   - drives forward using an ultrasonic sensor for obstacle avoidance
+//   - watches an MQ2 gas/smoke sensor and, above threshold, sounds a buzzer,
+//     lights a red LED, and turns on a water pump for a few seconds
+//
+// See README.md in the repo root for the full wiring diagram and pin table.
+
 // Pins for Motor A
 const int motorAIn1 = 6;
 const int motorAIn2 = 7;
-const int motorAEnable = 2; // PWM pin for Motor A
+const int motorAEnable = 5; // PWM pin for Motor A (was pin 2, which is NOT a PWM-capable
+                             // pin on Uno/Nano — analogWrite() there does not give real speed
+                             // control. Moved to pin 5, a genuine PWM pin.)
 
 // Pins for Motor B
 const int motorBIn3 = 8;
